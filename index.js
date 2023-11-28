@@ -10,6 +10,23 @@ app.use(express.json())
 // Pedidos //
 const orders = []
 
+// Checagem de ID - Middlewere
+const checkOrderId = (request, response, next) => {
+
+    const { id } = request.params
+    const index = orders.findIndex(order => order.id === id)
+
+    if(index === -1){
+        return response.status(404).json({ mensage: "Order not Found" })
+    }
+
+    request.orderIndex = index
+    request.orderId = id
+
+    next()
+
+}
+
 // Buscando Pedidos - ".get"
 app.get('/orders', (request, response) => {
     return response.status(200).json(orders)
@@ -26,26 +43,20 @@ app.post('/orders', (request, response) => {
 })
 
 // Atualizando Pedido para: "Pronto" - ".put / .patch"
-app.put('/orders/:id', (request, response) => {
+app.put('/orders/:id', checkOrderId, (request, response) => {
     const { id } = request.params
     const { name, client_order, price, status } = request.body
 
     const updatedOrder = { id, name, client_order, price, status }
     const index = orders.findIndex(order => order.id === id)
 
-    if (index >= 0) {
-        orders[index] = updatedOrder
-    } else if (index === -1) {
-        return response.status(404).json({ mensage: "Order not Found" })
-    } else {
-        return response.status(500).json({ mensage: "Internal Server Error" })
-    }
+    orders[index] = updatedOrder
 
     return response.status(201).json(updatedOrder)
 })
 
 // Deletando Pedido - ".delete"
-app.delete('/orders/:id', (request, response) => {
+app.delete('/orders/:id', checkOrderId, (request, response) => {
     const { id } = request.params
     const index = orders.findIndex(order => order.id === id)
 
